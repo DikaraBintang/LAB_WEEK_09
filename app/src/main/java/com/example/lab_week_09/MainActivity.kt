@@ -24,6 +24,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 //Previously we extend AppCompatActivity,
 //now we extend ComponentActivity
@@ -45,12 +49,17 @@ class MainActivity : ComponentActivity() {
                 ) {
                     //Here, we call the Home composable
                     val list = listOf("Tanu", "Tina", "Tono")
-                    Home(list)
+                    Home()
                 }
             }
         }
     }
 }
+
+data class Student(
+    var name: String
+)
+
 //Here, instead of defining it in an XML file,
 //we create a composable function called Home
 //@Preview is used to show a preview of the composable
@@ -59,9 +68,33 @@ class MainActivity : ComponentActivity() {
 //It's a way of defining a composable
 
 @Composable
-fun Home(
-    //Here, we define a parameter called items
-    items: List<String>,
+fun Home() {
+    val listData = remember { mutableStateListOf(
+        Student("Tanu"),
+        Student("Tina"),
+        Student("Tono")
+    )}
+
+    var inputField = remember { mutableStateOf(Student("")) }
+    HomeContent(
+        listData,
+        inputField.value,
+        { input -> inputField.value = inputField.value.copy(input) },
+        {
+            if (inputField.value.name.isNotBlank()) {
+                listData.add(inputField.value)
+                inputField.value = Student("")
+            }
+        }
+    )
+}
+
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>,
+    inputField: Student,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit
 ) {
     //Here, we use LazyColumn to lazily display a list of items horizontally
     //LazyColumn is more efficient than Column
@@ -82,24 +115,21 @@ fun Home(
             //You can also use verticalArrangement = Arrangement.Center to align the Column vertically
             horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            Text(text = stringResource(
-                id = R.string.enter_item)
+                Text(text = stringResource(
+                    id = R.string.enter_item)
             )
-            //Here, we use TextField to display a text input field
-            TextField(
-                //Set the value of the input field
-                value = "",
-                //Set the keyboard type of the input field
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number
-                ),
-                //Set what happens when the value of the input field changes
-                        onValueChange = {
-                }
-            )
+                TextField(
+                    value = inputField.name,
+                    onValueChange = { onInputValueChange(it) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
+                    )
+                )
             //Here, we use Button to display a button
             //the onClick parameter is used to set what happens when the button is clicked
-            Button(onClick = { }) {
+                Button(onClick = {
+                    onButtonClick()
+                }) {
                 //Set the text of the button
                 Text(text = stringResource(
                     id = R.string.button_click)
@@ -109,12 +139,12 @@ fun Home(
         }
         //Here, we use items to display a list of items inside the LazyColumn
         //This is the RecyclerView replacement
-        items(items) { item ->
+        items(listData) { item ->
             Column(
                 modifier = Modifier.padding(vertical = 4.dp).fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item)
+                Text(text = item.name)
             }
         }
     }
@@ -122,10 +152,10 @@ fun Home(
 //Here, we create a preview function of the Home composable
 //This function is specifically used to show a preview of the Home composable
 //This is only for development purpose
-@Preview(showBackground = true)
-@Composable
-fun PreviewHome() {
-    Home(listOf("Tanu", "Tina", "Tono"))
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewHome() {
+//    Home(listOf("Tanu", "Tina", "Tono"))
+//}
 
 
