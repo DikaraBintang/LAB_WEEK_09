@@ -41,25 +41,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonClass
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import java.lang.reflect.Type
 
 
+@JsonClass(generateAdapter = true)
+data class Student(
+    var name: String
+)
 
-//Previously we extend AppCompatActivity,
-//now we extend ComponentActivity
+
+val moshi: Moshi = Moshi.Builder().build()
+val listType: Type = Types.newParameterizedType(List::class.java, Student::class.java)
+val studentListAdapter: JsonAdapter<List<Student>> = moshi.adapter(listType)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //Here, we use setContent instead of setContentView
+
         setContent {
-            //Here, we wrap our content with the theme
-            //You can check out the LAB_WEEK_09Theme inside Theme.kt
+
             LAB_WEEK_09Theme {
-                // A surface container using the 'background' color from the theme
+
                 Surface(
-                    //We use Modifier.fillMaxSize() to make the surface fill the whole screen
                             modifier = Modifier.fillMaxSize(),
-                    //We use MaterialTheme.colorScheme.background to get the background color
-                            //and set it as the color of the surface
                             color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
@@ -72,9 +80,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-data class Student(
-    var name: String
-)
+
 
 
 @Composable
@@ -87,10 +93,9 @@ fun App(navController: NavHostController) {
 
         composable("home") {
 
-            "resultContent"
 
-            Home { navController.navigate(
-                "resultContent/?listData=$it")
+            Home { jsonString -> navController.navigate(
+                "resultContent/?listData=$jsonString")
             }
         }
 
@@ -111,16 +116,34 @@ fun App(navController: NavHostController) {
 
 @Composable
 fun ResultContent(listData: String) {
-    Column(
+
+    val studentList = remember(listData) {
+
+        try {
+            if (listData.isNotEmpty()) {
+                studentListAdapter.fromJson(listData) ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList<Student>()
+        }
+    }
+
+
+    LazyColumn(
         modifier = Modifier
             .padding(vertical = 4.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //Here, we call the OnBackgroundItemText UI Element
-        OnBackgroundItemText(text = listData)
+        items(studentList) { student ->
+            OnBackgroundItemText(text = student.name)
+        }
     }
 }
+
 @Composable
 fun Home(
     navigateFromHomeToResult: (String) -> Unit
@@ -132,17 +155,24 @@ fun Home(
     )}
 
     var inputField = remember { mutableStateOf(Student("")) }
+
+
+
     HomeContent(
         listData,
         inputField.value,
         { input -> inputField.value = inputField.value.copy(input) },
         {
+        //ini untuk assignment 1 udah saya kerjakan di salah satu commit sebelumnya
             if (inputField.value.name.isNotBlank()) {
                 listData.add(inputField.value)
                 inputField.value = Student("")
             }
 
-        }, { navigateFromHomeToResult(listData.toList().toString())}
+        }, {
+            val jsonString = studentListAdapter.toJson(listData.toList())
+            navigateFromHomeToResult(jsonString)
+        }
     )
 }
 
