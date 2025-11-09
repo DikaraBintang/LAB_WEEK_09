@@ -29,6 +29,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 
+import com.example.lab_week_09.ui.theme.OnBackgroundItemText
+import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
+import com.example.lab_week_09.ui.theme.PrimaryTextButton
+
+
 //Previously we extend AppCompatActivity,
 //now we extend ComponentActivity
 class MainActivity : ComponentActivity() {
@@ -63,7 +68,7 @@ data class Student(
 //Here, instead of defining it in an XML file,
 //we create a composable function called Home
 //@Preview is used to show a preview of the composable
-//@Preview(showBackground = true)
+@Preview(showBackground = true)
 //@Composable is used to tell the compiler that this is a composable function
 //It's a way of defining a composable
 
@@ -115,6 +120,10 @@ fun HomeContent(
             //You can also use verticalArrangement = Arrangement.Center to align the Column vertically
             horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                OnBackgroundTitleText(text = stringResource(
+                    id = R.string.enter_item)
+                )
+
                 Text(text = stringResource(
                     id = R.string.enter_item)
             )
@@ -125,15 +134,14 @@ fun HomeContent(
                         keyboardType = KeyboardType.Text
                     )
                 )
+
             //Here, we use Button to display a button
             //the onClick parameter is used to set what happens when the button is clicked
-                Button(onClick = {
-                    onButtonClick()
-                }) {
-                //Set the text of the button
-                Text(text = stringResource(
+                PrimaryTextButton(text = stringResource(
                     id = R.string.button_click)
-                )
+                ) {
+                    onButtonClick()
+
             }
         }
         }
@@ -144,7 +152,7 @@ fun HomeContent(
                 modifier = Modifier.padding(vertical = 4.dp).fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item.name)
+                OnBackgroundItemText(text = item.name)
             }
         }
     }
