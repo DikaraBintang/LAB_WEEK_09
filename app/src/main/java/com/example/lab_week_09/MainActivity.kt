@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,10 +29,19 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
 import com.example.lab_week_09.ui.theme.PrimaryTextButton
+
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+
+
 
 
 //Previously we extend AppCompatActivity,
@@ -52,9 +62,10 @@ class MainActivity : ComponentActivity() {
                             //and set it as the color of the surface
                             color = MaterialTheme.colorScheme.background
                 ) {
-                    //Here, we call the Home composable
-                    val list = listOf("Tanu", "Tina", "Tono")
-                    Home()
+                    val navController = rememberNavController()
+                    App(
+                        navController = navController
+                    )
                 }
             }
         }
@@ -65,15 +76,55 @@ data class Student(
     var name: String
 )
 
-//Here, instead of defining it in an XML file,
-//we create a composable function called Home
-//@Preview is used to show a preview of the composable
-@Preview(showBackground = true)
-//@Composable is used to tell the compiler that this is a composable function
-//It's a way of defining a composable
 
 @Composable
-fun Home() {
+fun App(navController: NavHostController) {
+
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+
+        composable("home") {
+
+            "resultContent"
+
+            Home { navController.navigate(
+                "resultContent/?listData=$it")
+            }
+        }
+
+        composable(
+            "resultContent/?listData={listData}",
+            arguments = listOf(navArgument("listData") {
+                type = NavType.StringType }
+            )
+        ) {
+
+            ResultContent(
+                it.arguments?.getString("listData").orEmpty()
+            )
+        }
+    }
+}
+
+
+@Composable
+fun ResultContent(listData: String) {
+    Column(
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        //Here, we call the OnBackgroundItemText UI Element
+        OnBackgroundItemText(text = listData)
+    }
+}
+@Composable
+fun Home(
+    navigateFromHomeToResult: (String) -> Unit
+) {
     val listData = remember { mutableStateListOf(
         Student("Tanu"),
         Student("Tina"),
@@ -90,7 +141,8 @@ fun Home() {
                 listData.add(inputField.value)
                 inputField.value = Student("")
             }
-        }
+
+        }, { navigateFromHomeToResult(listData.toList().toString())}
     )
 }
 
@@ -99,57 +151,47 @@ fun HomeContent(
     listData: SnapshotStateList<Student>,
     inputField: Student,
     onInputValueChange: (String) -> Unit,
-    onButtonClick: () -> Unit
+    onButtonClick: () -> Unit,
+    navigateFromHomeToResult: () -> Unit
 ) {
-    //Here, we use LazyColumn to lazily display a list of items horizontally
-    //LazyColumn is more efficient than Column
-    //because it only composes and lays out the currently visible items
-    //much like a RecyclerView
-    //You can also use LazyRow to lazily display a list of items horizontally
+
     LazyColumn {
-        //Here, we use item to display an item inside the LazyColumn
         item {
             Column(
-                //Modifier.padding(16.dp) is used to add padding to the Column
-                        //You can also use Modifier.padding(horizontal = 16.dp,vertical = 8.dp)
-            //to add padding horizontally and vertically
-            //or Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
-            //to add padding to each side
-                modifier = Modifier.padding(16.dp).fillMaxSize(),
-            //Alignment.CenterHorizontally is used to align the Column horizontally
-            //You can also use verticalArrangement = Arrangement.Center to align the Column vertically
-            horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OnBackgroundTitleText(text = stringResource(
                     id = R.string.enter_item)
                 )
-
-                Text(text = stringResource(
-                    id = R.string.enter_item)
-            )
                 TextField(
                     value = inputField.name,
-                    onValueChange = { onInputValueChange(it) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text
-                    )
+                    ),
+                    onValueChange = {
+                        onInputValueChange(it)
+                    }
                 )
-
-            //Here, we use Button to display a button
-            //the onClick parameter is used to set what happens when the button is clicked
-                PrimaryTextButton(text = stringResource(
-                    id = R.string.button_click)
-                ) {
-                    onButtonClick()
-
+                Row {
+                    PrimaryTextButton(text = stringResource(id =
+                        R.string.button_click)) {
+                        onButtonClick()
+                    }
+                    PrimaryTextButton(text = stringResource(id =
+                        R.string.button_navigate)) {
+                        navigateFromHomeToResult()
+                    }
+                }
             }
         }
-        }
-        //Here, we use items to display a list of items inside the LazyColumn
-        //This is the RecyclerView replacement
         items(listData) { item ->
             Column(
-                modifier = Modifier.padding(vertical = 4.dp).fillMaxSize(),
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OnBackgroundItemText(text = item.name)
